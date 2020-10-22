@@ -245,7 +245,12 @@ func (m *Manager) lockingOperation(ctx context.Context, repo string, pr uint, f 
 	cancelled := false
 	select {
 	case opErr := <-ch:
-		err = opErr
+		select {
+		case <-ctx.Done():
+			cancelled = true
+		default:
+			err = opErr
+		}
 	case <-ctx.Done():
 		cancelled = true
 	}
