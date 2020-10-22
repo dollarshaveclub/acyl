@@ -44,6 +44,7 @@ type DataLayer interface {
 	K8sEnvDataLayer
 	EventLoggerDataLayer
 	UISessionsDataLayer
+	APIKeyDataLayer
 }
 
 // HelmDataLayer describes an object that stores data about Helm
@@ -97,4 +98,12 @@ type UISessionsDataLayer interface {
 	DeleteUISession(id int) error
 	GetUISession(id int) (*models.UISession, error)
 	DeleteExpiredUISessions() (uint, error)
+}
+
+type APIKeyDataLayer interface {
+	CreateAPIKey(ctx context.Context, permissionLevel models.PermissionLevel, name, description, githubUser string) (uuid.UUID, error)
+	GetAPIKeyById(ctx context.Context, id uuid.UUID) (*models.APIKey, error)
+	GetAPIKeysByGithubUser(ctx context.Context, githubUser string) ([]*models.APIKey, error)
+	UpdateAPIKeyLastUsed(ctx context.Context, id uuid.UUID) error
+	DeleteAPIKey(ctx context.Context, id uuid.UUID) error
 }

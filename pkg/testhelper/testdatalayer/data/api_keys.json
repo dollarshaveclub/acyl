@@ -1,0 +1,74 @@
+[
+  {
+    "id": "d7a6f616-08d4-11eb-adc1-0242ac120002",
+    "created": "2020-01-20T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-01-20T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 1,
+    "name": "my-repo-abc",
+    "description": "read only for my-repo-abc",
+    "github_user": "johnsmith"
+  },
+  {
+    "id": "a5f3f316-098e-11eb-adc1-0242ac120002",
+    "created": "2020-08-19T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-08-19T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 2,
+    "name": "my-repo-abc",
+    "description": "write for my-repo-abc",
+    "github_user": "jackhandy"
+  },
+  {
+    "id": "9df12e4e-08d6-11eb-adc1-0242ac120002",
+    "created": "2020-10-01T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-10-01T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 3,
+    "name": "my-repo-abc",
+    "description": "admin for my-repo-abc",
+    "github_user": "janejones"
+  },
+  {
+    "id": "6985dc36-08d6-11eb-adc1-0242ac120002",
+    "created": "2020-03-03T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-03-03T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 1,
+    "name": "my-repo-def",
+    "description": "read only for my-repo-def",
+    "github_user": "johnsmith"
+  },
+  {
+    "id": "6dd76b34-08f8-11eb-adc1-0242ac120002",
+    "created": "2020-08-19T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-08-19T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 3,
+    "name": "my-repo-def",
+    "description": "write for my-repo-def",
+    "github_user": "janejones"
+  },
+  {
+    "id": "852a260e-08d6-11eb-adc1-0242ac120002",
+    "created": "2020-02-19T12:12:12.077582996Z",
+    "last_used": {
+      "time": "2020-02-19T12:12:12.077582996Z",
+      "valid": true
+    },
+    "permission_level": 2,
+    "name": "my-repo-ghi",
+    "description": "write for my-repo-ghi",
+    "github_user": "johnsmith"
+  }
+]

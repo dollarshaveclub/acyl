@@ -91,9 +91,9 @@ func (api *v1api) register(r *muxtrace.Router) error {
 		return fmt.Errorf("router is nil")
 	}
 	// v1 routes
-	r.HandleFunc("/v1/envs/_search", middlewareChain(api.envSearchHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/v1/envs/_recent", middlewareChain(api.envRecentHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/v1/envs/{name}", middlewareChain(api.envDetailHandler, authMiddleware.authRequest)).Methods("GET")
+	r.HandleFunc("/v1/envs/_search", middlewareChain(authMiddleware.tokenAuth(api.envSearchHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/v1/envs/_recent", middlewareChain(authMiddleware.tokenAuth(api.envRecentHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/v1/envs/{name}", middlewareChain(authMiddleware.tokenAuth(api.envDetailHandler, models.ReadOnlyPermission))).Methods("GET")
 	return nil
 }
 

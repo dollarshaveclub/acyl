@@ -236,6 +236,7 @@ func (d *Dispatcher) RegisterVersions(deps *Dependencies, ro ...RegisterOption) 
 	}
 
 	authMiddleware.apiKeys = ropts.apiKeys
+	authMiddleware.DL = deps.DataLayer
 	ipWhitelistMiddleware.ipwl = ropts.ipWhitelist
 	sessionAuthMiddleware.Enforce = oauthcfg.Enforce
 	sessionAuthMiddleware.CookieStore = newSessionsCookieStore(oauthcfg)

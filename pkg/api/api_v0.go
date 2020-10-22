@@ -116,9 +116,9 @@ func (api *v0api) register(r *muxtrace.Router) error {
 	// backwards-compatible routes
 	r.HandleFunc("/spawn", middlewareChain(api.legacyGithubWebhookHandler, waitMiddleware.waitOnRequest)).Methods("POST")
 	r.HandleFunc("/webhook", middlewareChain(api.legacyGithubWebhookHandler, waitMiddleware.waitOnRequest)).Methods("POST")
-	r.HandleFunc("/envs/_search", middlewareChain(api.envSearchHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/envs/{name}", middlewareChain(api.envDetailHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/envs/{name}", middlewareChain(api.envDestroyHandler, authMiddleware.authRequest, waitMiddleware.waitOnRequest)).Methods("DELETE")
+	r.HandleFunc("/envs/_search", middlewareChain(authMiddleware.tokenAuth(api.envSearchHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/envs/{name}", middlewareChain(authMiddleware.tokenAuth(api.envDetailHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/envs/{name}", middlewareChain(authMiddleware.tokenAuth(api.envDestroyHandler, models.AdminPermission), waitMiddleware.waitOnRequest)).Methods("DELETE")
 	ghahandler := api.gha.Handler()
 	r.HandleFunc("/ghapp/webhook", middlewareChain(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// allow request logging by bundling a zerolog logger into the request context
@@ -128,29 +128,29 @@ func (api *v0api) register(r *muxtrace.Router) error {
 	}), waitMiddleware.waitOnRequest)).Methods("POST")
 
 	// DEPRECATED: no longer supported, please use /envs/_search
-	r.HandleFunc("/envs", middlewareChain(api.envListHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/envs/", middlewareChain(api.envListHandler, authMiddleware.authRequest)).Methods("GET")
+	r.HandleFunc("/envs", middlewareChain(authMiddleware.tokenAuth(api.envListHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/envs/", middlewareChain(authMiddleware.tokenAuth(api.envListHandler, models.ReadOnlyPermission))).Methods("GET")
 
 	// DEPRECATED: original Lambda-based DQA implementation, no longer supported
-	r.HandleFunc("/envs/{name}/success", middlewareChain(api.envSuccessHandler, authMiddleware.authRequest)).Methods("POST")
-	r.HandleFunc("/envs/{name}/failure", middlewareChain(api.envFailureHandler, authMiddleware.authRequest)).Methods("POST")
-	r.HandleFunc("/envs/{name}/event", middlewareChain(api.envEventHandler, authMiddleware.authRequest)).Methods("POST")
+	r.HandleFunc("/envs/{name}/success", middlewareChain(authMiddleware.tokenAuth(api.envSuccessHandler, models.WritePermission))).Methods("POST")
+	r.HandleFunc("/envs/{name}/failure", middlewareChain(authMiddleware.tokenAuth(api.envFailureHandler, models.WritePermission))).Methods("POST")
+	r.HandleFunc("/envs/{name}/event", middlewareChain(authMiddleware.tokenAuth(api.envEventHandler, models.WritePermission))).Methods("POST")
 
 	// v0 routes
 	r.HandleFunc("/v0/spawn", middlewareChain(api.legacyGithubWebhookHandler, waitMiddleware.waitOnRequest)).Methods("POST")
 	r.HandleFunc("/v0/webhook", middlewareChain(api.legacyGithubWebhookHandler, waitMiddleware.waitOnRequest)).Methods("POST")
-	r.HandleFunc("/v0/envs/_search", middlewareChain(api.envSearchHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/v0/envs/{name}", middlewareChain(api.envDetailHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/v0/envs/{name}", middlewareChain(api.envDestroyHandler, authMiddleware.authRequest, waitMiddleware.waitOnRequest)).Methods("DELETE")
+	r.HandleFunc("/v0/envs/_search", middlewareChain(authMiddleware.tokenAuth(api.envSearchHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/v0/envs/{name}", middlewareChain(authMiddleware.tokenAuth(api.envDetailHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/v0/envs/{name}", middlewareChain(authMiddleware.tokenAuth(api.envDestroyHandler, models.AdminPermission), waitMiddleware.waitOnRequest)).Methods("DELETE")
 
 	// DEPRECATED: no longer supported, please use /v0/envs/_search
-	r.HandleFunc("/v0/envs", middlewareChain(api.envListHandler, authMiddleware.authRequest)).Methods("GET")
-	r.HandleFunc("/v0/envs/", middlewareChain(api.envListHandler, authMiddleware.authRequest)).Methods("GET")
+	r.HandleFunc("/v0/envs", middlewareChain(authMiddleware.tokenAuth(api.envListHandler, models.ReadOnlyPermission))).Methods("GET")
+	r.HandleFunc("/v0/envs/", middlewareChain(authMiddleware.tokenAuth(api.envListHandler, models.ReadOnlyPermission))).Methods("GET")
 
 	// DEPRECATED: original Lambda-based DQA implementation, no longer supported
-	r.HandleFunc("/v0/envs/{name}/success", middlewareChain(api.envSuccessHandler, authMiddleware.authRequest)).Methods("POST")
-	r.HandleFunc("/v0/envs/{name}/failure", middlewareChain(api.envFailureHandler, authMiddleware.authRequest)).Methods("POST")
-	r.HandleFunc("/v0/envs/{name}/event", middlewareChain(api.envEventHandler, authMiddleware.authRequest)).Methods("POST")
+	r.HandleFunc("/v0/envs/{name}/success", middlewareChain(authMiddleware.tokenAuth(api.envSuccessHandler, models.WritePermission))).Methods("POST")
+	r.HandleFunc("/v0/envs/{name}/failure", middlewareChain(authMiddleware.tokenAuth(api.envFailureHandler, models.WritePermission))).Methods("POST")
+	r.HandleFunc("/v0/envs/{name}/event", middlewareChain(authMiddleware.tokenAuth(api.envEventHandler, models.WritePermission))).Methods("POST")
 
 	return nil
 }
