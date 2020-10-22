@@ -252,7 +252,7 @@ func (m *Manager) lockingOperation(ctx context.Context, repo string, pr uint, f 
 	switch {
 	case cancelled:
 		eventlogger.GetLogger(ctx).SetCompletedStatus(models.CancelledStatus)
-		err = nitroerrors.CancelledError(ctx.Err())
+		err = fmt.Errorf("%w: %v", nitroerrors.ErrContextCancelled, ctx.Err())
 	case err != nil:
 		var ce metahelmlib.ChartError
 		if stdliberrors.As(err, &ce) {

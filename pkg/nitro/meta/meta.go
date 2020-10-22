@@ -51,13 +51,15 @@ var (
 	ErrNilParent               = errors.New("parent is nil")
 	ErrNilAncestor             = errors.New("ancestor is nil")
 	ErrNilDependency           = errors.New("dependency is nil")
-	ErrMissingPath             = errors.New("repo dependency lacks ChartPath/ChartRepoPath")
-	ErrMultipleDependency      = errors.New("dependency error: %v: only one of Repo, ChartPath, or ChartRepoPath may be used")
+	ErrMissingPath             = errors.New("repo dependency lacks one of ChartPath or ChartRepoPath")
+	ErrMultipleDependency      = errors.New("only one of Repo, ChartPath, or ChartRepoPath may be used")
 	ErrDuplicateDependency     = errors.New("duplicate repository dependency (check for circular dependency declarations)")
 	ErrBranchAndRepo           = errors.New("branch matching and default branch not available if ChartPath or ChartRepoPath is used")
 	ErrValidateDependencyNames = errors.New("error validating dependency names")
 	ErrMalformedValueOverride  = errors.New("malformed value override")
 	ErrMalformedRepoPath       = errors.New("malformed repo path")
+	ErrNilLocation             = errors.New("location is nil")
+	ErrContextCancelled        = errors.New("context was cancelled")
 )
 
 // System errors
@@ -71,11 +73,8 @@ var (
 	ErrCreatingFile         = errors.New("error creating file")
 	ErrWritingFile          = errors.New("error writing to file")
 	ErrShortWrite           = io.ErrShortWrite
-	ErrNilLocation          = errors.New("location is nil")
 	ErrGetChartName         = errors.New("error getting chart name for dependency")
 )
-
-var ErrContextCancelled = errors.New("context was cancelled")
 
 // GetAcylYAML fetches acyl.yaml from repo at ref and deserializes it into rc, returning an error if the version is < 2.
 func (g DataGetter) GetAcylYAML(ctx context.Context, rc *models.RepoConfig, repo, ref string) (err error) {
@@ -327,7 +326,7 @@ func (g DataGetter) Get(ctx context.Context, rd models.RepoRevisionData) (*model
 			if d.Name == "" {
 				name, err := g.getDependencyChartName(ctx, d)
 				if err != nil {
-					return fmt.Errorf("%v: %w", d.AppMetadata.Repo)
+					return fmt.Errorf("%v: %w", d.AppMetadata.Repo, err)
 				}
 				d.Name = name
 			}
