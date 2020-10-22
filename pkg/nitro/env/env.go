@@ -176,7 +176,6 @@ func (m *Manager) setGithubCommitStatus(ctx context.Context, rd *models.RepoRevi
 	renderedCSTemplate, err := cst.Render(csData)
 	if err != nil {
 		return nil, fmt.Errorf("error rendering template: %w", err)
-
 	}
 	eid := eventlogger.GetLogger(ctx).ID
 	if err := m.DL.SetEventStatusRenderedStatus(eid, models.RenderedEventStatus{
@@ -201,7 +200,6 @@ func (m *Manager) setGithubCommitStatus(ctx context.Context, rd *models.RepoRevi
 	err = m.RC.SetStatus(ctx2, rd.Repo, rd.SourceSHA, cs)
 	if err != nil {
 		return nil, fmt.Errorf("error setting commit status: %w", err)
-
 	}
 	return cs, nil
 }
@@ -338,7 +336,6 @@ func (m *Manager) getRepoConfig(ctx context.Context, rd *models.RepoRevisionData
 	rc, err = m.MG.Get(ctx, *rd)
 	if err != nil {
 		return nil, fmt.Errorf("error getting metadata: %w", nitroerrors.UserError(err))
-
 	}
 	if rc == nil {
 		return nil, nitroerrors.SystemError(errors.New("rc is nil"))
@@ -359,7 +356,6 @@ func (m *Manager) generateNewEnv(ctx context.Context, rd *models.RepoRevisionDat
 	envs, err := m.DL.GetQAEnvironmentsByRepoAndPR(ctx, rd.Repo, rd.PullRequest)
 	if err != nil {
 		return nil, fmt.Errorf("error checking for existing environment record: %w", err)
-
 	}
 	if len(envs) > 0 {
 		// environment record exists, reuse the latest one
@@ -383,14 +379,12 @@ func (m *Manager) generateNewEnv(ctx context.Context, rd *models.RepoRevisionDat
 		env, err = m.DL.GetQAEnvironment(ctx, env.Name)
 		if err != nil {
 			return nil, fmt.Errorf("error getting updated, reused environment record: %w", err)
-
 		}
 	} else {
 		// no record exists, create a new one
 		name, err := m.NG.New()
 		if err != nil {
 			return nil, fmt.Errorf("error generating name: %w", err)
-
 		}
 		m.log(ctx, "generating new environment record: %v", name)
 		env = &models.QAEnvironment{
@@ -427,18 +421,15 @@ func (m *Manager) processEnvConfig(ctx context.Context, env *models.QAEnvironmen
 	rc, err := m.getRepoConfig(ctx, rd)
 	if err != nil {
 		return ne, fmt.Errorf("error validating environment config: %w", err)
-
 	}
 	ne.rc = rc
 	rm, err := rc.RefMap()
 	if err != nil {
 		return ne, fmt.Errorf("error generating ref map: %w", err)
-
 	}
 	csm, err := rc.CommitSHAMap()
 	if err != nil {
 		return ne, fmt.Errorf("error generating commit SHA map: %w", err)
-
 	}
 	if err := m.DL.SetQAEnvironmentRefMap(ctx, env.Name, rm); err != nil {
 		return ne, fmt.Errorf("error setting environment ref map: %w", err)
@@ -455,7 +446,6 @@ func (m *Manager) processEnvConfig(ctx context.Context, env *models.QAEnvironmen
 	env, err = m.DL.GetQAEnvironment(ctx, env.Name)
 	if err != nil {
 		return ne, fmt.Errorf("error getting updated environment record: %w", err)
-
 	}
 	ne.env = env
 	return ne, nil
@@ -469,7 +459,6 @@ func (m *Manager) fetchCharts(ctx context.Context, name string, rc *models.RepoC
 	td, err := tempDir(m.FS, "", name)
 	if err != nil {
 		return "", nil, fmt.Errorf("error generating temp dir: %w", err)
-
 	}
 	end := m.MC.Timing(mpfx+"fetch_helm_charts", "triggering_repo:"+rc.Application.Repo)
 	cloc, err := m.MG.FetchCharts(ctx, rc, td)
@@ -512,7 +501,6 @@ func (m *Manager) create(ctx context.Context, rd *models.RepoRevisionData) (envn
 	env, err := m.generateNewEnv(ctx, rd)
 	if err != nil {
 		return "", fmt.Errorf("error generating environment data: %w", err)
-
 	}
 	eventlogger.GetLogger(ctx).SetNewStatus(models.CreateEvent, env.Name, *rd)
 	m.setloggername(ctx, env.Name)
@@ -541,7 +529,6 @@ func (m *Manager) create(ctx context.Context, rd *models.RepoRevisionData) (envn
 	newenv, err = m.processEnvConfig(ctx, env, rd)
 	if err != nil {
 		return "", fmt.Errorf("error processing environment config: %w", err)
-
 	}
 	elapsed := time.Since(start)
 	eventlogger.GetLogger(ctx).SetInitialStatus(newenv.rc, elapsed)
@@ -556,7 +543,6 @@ func (m *Manager) create(ctx context.Context, rd *models.RepoRevisionData) (envn
 	td, cloc, err := m.fetchCharts(ctx, env.Name, newenv.rc)
 	if err != nil {
 		return "", fmt.Errorf("error fetching charts: %w", err)
-
 	}
 	defer billyutil.RemoveAll(m.FS, td)
 	mcloc := metahelm.ChartLocations{}
@@ -598,7 +584,6 @@ func (m *Manager) getenv(ctx context.Context, rd *models.RepoRevisionData) (*mod
 	envs, err := m.DL.GetExtantQAEnvironments(ctx, rd.Repo, rd.PullRequest)
 	if err != nil {
 		return nil, fmt.Errorf("error getting extant environments: %w", err)
-
 	}
 	if len(envs) != 1 {
 		m.log(ctx, "expected exactly one extant environment but there are %v", len(envs))
@@ -624,7 +609,6 @@ func (m *Manager) delete(ctx context.Context, rd *models.RepoRevisionData, reaso
 			envs, err := m.DL.GetQAEnvironmentsByRepoAndPR(ctx, rd.Repo, rd.PullRequest)
 			if err != nil {
 				return fmt.Errorf("error getting environments associated with the repo (%v) and PR (%v): %w", rd.Repo, rd.PullRequest, nitroerrors.SystemError(err))
-
 			}
 			if len(envs) > 0 {
 				for _, e := range envs {
@@ -668,7 +652,6 @@ func (m *Manager) delete(ctx context.Context, rd *models.RepoRevisionData, reaso
 	k8senv, err := m.DL.GetK8sEnv(ctx, env.Name)
 	if err != nil {
 		return fmt.Errorf("error getting k8s environment: %w", nitroerrors.SystemError(err))
-
 	}
 	if k8senv == nil {
 		return errors.New("missing k8s environment")
@@ -683,7 +666,6 @@ func (m *Manager) delete(ctx context.Context, rd *models.RepoRevisionData, reaso
 	err = m.DL.SetQAEnvironmentStatus(tracer.ContextWithSpan(context.Background(), span), env.Name, models.Destroyed)
 	if err != nil {
 		return fmt.Errorf("error setting environment status: %w", nitroerrors.SystemError(err))
-
 	}
 	return nil
 }
@@ -772,14 +754,12 @@ func (m *Manager) update(ctx context.Context, rd *models.RepoRevisionData) (envn
 	ne, err = m.processEnvConfig(ctx, env, rd)
 	if err != nil {
 		return "", fmt.Errorf("error processing environment config for update: %w", err)
-
 	}
 	elapsed := time.Since(started)
 	eventlogger.GetLogger(ctx).SetInitialStatus(ne.rc, elapsed)
 	k8senv, err := m.DL.GetK8sEnv(ctx, env.Name)
 	if err != nil {
 		return "", fmt.Errorf("error getting k8s environment: %w", nitroerrors.SystemError(err))
-
 	}
 	if k8senv == nil {
 		return "", nitroerrors.SystemError(errors.New("missing k8s environment"))
@@ -795,7 +775,6 @@ func (m *Manager) update(ctx context.Context, rd *models.RepoRevisionData) (envn
 	td, cloc, err := m.fetchCharts(ctx, env.Name, ne.rc)
 	if err != nil {
 		return "", fmt.Errorf("error fetching charts: %w", err)
-
 	}
 	defer billyutil.RemoveAll(m.FS, td)
 	mcloc := metahelm.ChartLocations{}
@@ -814,7 +793,6 @@ func (m *Manager) update(ctx context.Context, rd *models.RepoRevisionData) (envn
 		releases, err := m.DL.GetHelmReleasesForEnv(ctx, env.Name)
 		if err != nil {
 			return "", fmt.Errorf("error getting helm releases for env: %w", nitroerrors.SystemError(err))
-
 		}
 		rsls := map[string]string{}
 		for _, r := range releases {
