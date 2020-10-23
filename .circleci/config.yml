@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.13
+      - image: circleci/golang:1.15
     working_directory: /go/src/github.com/dollarshaveclub/acyl
     steps:
       - checkout
@@ -13,7 +13,7 @@ jobs:
       - run: go build
   test:
     docker:
-      - image: circleci/golang:1.14
+      - image: circleci/golang:1.15
       - image: postgres:9.5.9-alpine
         environment:
         - POSTGRES_USER=acyl

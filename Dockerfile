@@ -1,4 +1,4 @@
-FROM golang:1.14-alpine
+FROM golang:1.15-alpine
 
 COPY . /go/src/github.com/dollarshaveclub/acyl
 RUN cd /go/src/github.com/dollarshaveclub/acyl && \
