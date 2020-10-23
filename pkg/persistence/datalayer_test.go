@@ -9,11 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
-
 	"github.com/dollarshaveclub/acyl/pkg/models"
 	"github.com/dollarshaveclub/metahelm/pkg/metahelm"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 )
 
 func TestDataLayerCreateQAEnvironment(t *testing.T) {
@@ -1807,5 +1806,205 @@ func TestDataLayerDeleteExpiredUISessions(t *testing.T) {
 	}
 	if uis, err := dl.GetUISession(id3); err != nil || uis != nil {
 		t.Fatalf("error getting ui session or session not deleted: %v: %+v", err, *uis)
+	}
+}
+
+func TestDataLayerCreateAPIKey(t *testing.T) {
+	dl, tdl := NewTestDataLayer(t)
+	if err := tdl.Setup(testDataPath); err != nil {
+		t.Fatalf("error setting up test database: %v", err)
+	}
+	defer tdl.TearDown()
+	ids := []uuid.UUID{}
+	requests := []models.APIKey{
+		{
+			PermissionLevel: models.WritePermission,
+			Name:            "foo write",
+			Description:     "foo write description",
+			GitHubUser:      "johnsmith",
+		},
+		{
+			PermissionLevel: models.AdminPermission,
+			Name:            "bar admin",
+			Description:     "bar admin description",
+			GitHubUser:      "jackhandy",
+		},
+		{
+			PermissionLevel: models.ReadOnlyPermission,
+			Name:            "foo read only",
+			Description:     "foo read only description",
+			GitHubUser:      "janejones",
+		},
+	}
+	for _, r := range requests {
+		id, err := dl.CreateAPIKey(context.Background(), r.PermissionLevel, r.Name, r.Description, r.GitHubUser)
+		if err != nil {
+			t.Fatalf("create api key should have succeeded: %v", err)
+		}
+		if id == uuid.Nil {
+			t.Fatal("create api key should have returned the api key id")
+		}
+		ids = append(ids, id)
+
+	}
+	_, err := dl.GetAPIKeyById(context.Background(), ids[1])
+	if err != nil {
+		t.Fatalf("error getting created api key: %v", err)
+	}
+}
+
+func TestGetAPIKeyById(t *testing.T) {
+	dl, tdl := NewTestDataLayer(t)
+	if err := tdl.Setup(testDataPath); err != nil {
+		t.Fatalf("error setting up test database: %v", err)
+	}
+	defer tdl.TearDown()
+	requests := []models.APIKey{
+		{
+			ID:              uuid.MustParse("9df12e4e-08d6-11eb-adc1-0242ac120002"),
+			PermissionLevel: models.AdminPermission,
+			Name:            "my-repo-abc",
+			Description:     "admin for my-repo-abc",
+			GitHubUser:      "janejones",
+		},
+		{
+			ID:              uuid.MustParse("a5f3f316-098e-11eb-adc1-0242ac120002"),
+			PermissionLevel: models.WritePermission,
+			Name:            "my-repo-abc",
+			Description:     "write for my-repo-abc",
+			GitHubUser:      "jackhandy",
+		},
+		{
+			ID:              uuid.MustParse("6985dc36-08d6-11eb-adc1-0242ac120002"),
+			PermissionLevel: models.ReadOnlyPermission,
+			Name:            "my-repo-def",
+			Description:     "read only for my-repo-def",
+			GitHubUser:      "johnsmith",
+		},
+	}
+	for _, r := range requests {
+		apiKey, err := dl.GetAPIKeyById(context.Background(), r.ID)
+		if err != nil {
+			t.Fatalf("error getting api key: %v", err)
+		}
+		if apiKey == nil {
+			t.Fatalf("expected api key returned")
+		}
+		if apiKey.PermissionLevel != r.PermissionLevel {
+			t.Fatalf("unexpected Permissions Level: %v (wanted: %v)", apiKey.PermissionLevel, r.PermissionLevel)
+		}
+		if apiKey.Name != r.Name {
+			t.Fatalf("unexpected name: %v (wanted: %v)", apiKey.Name, r.Name)
+		}
+		if apiKey.Description != r.Description {
+			t.Fatalf("unexpected description: %v (wanted: %v)", apiKey.Description, r.Description)
+		}
+		if apiKey.GitHubUser != r.GitHubUser {
+			t.Fatalf("unexpected github user: %v (wanted: %v)", apiKey.GitHubUser, r.GitHubUser)
+		}
+	}
+}
+
+func TestGetAPIKeysByGithubUser(t *testing.T)  {
+	dl, tdl := NewTestDataLayer(t)
+	if err := tdl.Setup(testDataPath); err != nil {
+		t.Fatalf("error setting up test database: %v", err)
+	}
+	defer tdl.TearDown()
+	apiKeys, err := dl.GetAPIKeysByGithubUser(context.Background(), "janejones")
+	if err != nil {
+		t.Fatalf("error getting api keys for user: %v", err)
+	}
+	if apiKeys == nil {
+		t.Fatalf("expected api keys returned")
+	}
+	if len(apiKeys) != 2 {
+		t.Fatalf("unexpected total api keys for user: %v (wanted 2)", len(apiKeys))
+	}
+}
+
+func TestUpdateAPIKeyLastUsed(t *testing.T)  {
+	dl, tdl := NewTestDataLayer(t)
+	if err := tdl.Setup(testDataPath); err != nil {
+		t.Fatalf("error setting up test database: %v", err)
+	}
+	defer tdl.TearDown()
+	req := models.APIKey{
+		PermissionLevel: models.ReadOnlyPermission,
+		Name:            "foo read only",
+		Description:     "foo read only description",
+		GitHubUser:      "jimbob",
+	}
+	id, err := dl.CreateAPIKey(context.Background(), req.PermissionLevel, req.Name, req.Description, req.GitHubUser)
+	if err != nil {
+		t.Fatalf("create api key should have succeeded: %v", err)
+	}
+	if id == uuid.Nil {
+		t.Fatal("create api key should have returned the api key id")
+	}
+	apikey, err := dl.GetAPIKeyById(context.Background(), id)
+	if err != nil {
+		t.Fatalf("error getting api key: %v", err)
+	}
+	lu := apikey.LastUsed.Time
+	time.Sleep(500 * time.Millisecond)
+	err = dl.UpdateAPIKeyLastUsed(context.Background(), id)
+	if err != nil {
+		t.Fatalf("error updating api key: %v", err)
+	}
+	updated, err := dl.GetAPIKeyById(context.Background(), id)
+	if err != nil {
+		t.Fatalf("error getting api key: %v", err)
+	}
+	if  lu == updated.LastUsed.Time {
+		t.Fatalf("expected last used to update; original: %v, updated: %v", lu, updated.LastUsed.Time)
+	}
+}
+
+func TestDeleteAPIKey(t *testing.T)  {
+	dl, tdl := NewTestDataLayer(t)
+	if err := tdl.Setup(testDataPath); err != nil {
+		t.Fatalf("error setting up test database: %v", err)
+	}
+	defer tdl.TearDown()
+	ids := []uuid.UUID{}
+	requests := []models.APIKey{
+		{
+			PermissionLevel: models.WritePermission,
+			Name:            "foo write",
+			Description:     "foo write description",
+			GitHubUser:      "johnsmith",
+		},
+		{
+			PermissionLevel: models.AdminPermission,
+			Name:            "bar admin",
+			Description:     "bar admin description",
+			GitHubUser:      "jackhandy",
+		},
+		{
+			PermissionLevel: models.ReadOnlyPermission,
+			Name:            "foo read only",
+			Description:     "foo read only description",
+			GitHubUser:      "janejones",
+		},
+	}
+	for _, r := range requests {
+		id, err := dl.CreateAPIKey(context.Background(),r.PermissionLevel, r.Name, r.Description, r.GitHubUser)
+		if err != nil {
+			t.Fatalf("create api key should have succeeded: %v", err)
+		}
+		if id == uuid.Nil {
+			t.Fatal("create api key should have returned the api key id")
+		}
+		ids = append(ids, id)
+
+	}
+	err := dl.DeleteAPIKey(context.Background(), ids[1])
+	if err != nil {
+		t.Fatalf("error getting created api key: %v", err)
+	}
+	apikey, _ := dl.GetAPIKeyById(context.Background(), ids[1])
+	if apikey != nil {
+		t.Fatalf("error api key was not deleted: %v", apikey)
 	}
 }

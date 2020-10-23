@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/pkg/errors"
 
@@ -36,14 +37,42 @@ var authMiddleware = reqAuthorizor{}
 
 type reqAuthorizor struct {
 	apiKeys []string
+	DL      persistence.APIKeyDataLayer
 }
 
-func (ra reqAuthorizor) authRequest(f http.HandlerFunc) http.HandlerFunc {
+func (ra reqAuthorizor) tokenAuth(f http.HandlerFunc, minPermission models.PermissionLevel) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		h := r.Header.Get(apiKeyHeader)
-		if h != "" {
+		log := func(msg string, args ...interface{}) {
+			log.Printf("tokenAuth: "+msg, args...)
+		}
+		key := r.Header.Get(apiKeyHeader)
+		if key != "" {
 			for _, k := range ra.apiKeys {
-				if h == k {
+				if key == k {
+					f(w, r)
+					return
+				}
+			}
+			keyID, err := uuid.Parse(key)
+			if err != nil {
+				log("error parsing api key id: %v", err)
+				w.WriteHeader(http.StatusForbidden)
+				return
+			}
+			apikey, err := authMiddleware.DL.GetAPIKeyById(r.Context(), keyID)
+			if err != nil {
+				log("error getting api key: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			if apikey != nil {
+				if apikey.PermissionLevel >= minPermission {
+					err = authMiddleware.DL.UpdateAPIKeyLastUsed(r.Context(), keyID)
+					if err != nil {
+						log("error updating api key: %v", err)
+						w.WriteHeader(http.StatusInternalServerError)
+						return
+					}
 					f(w, r)
 					return
 				}

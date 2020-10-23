@@ -187,6 +187,20 @@ func (tdl *TestDataLayer) insertEventLog(el models.EventLog) error {
 	return nil
 }
 
+func (tdl *TestDataLayer) insertAPIKeys(key models.APIKey) error {
+	if dltype == "fake" {
+		tdl.fdl.data.Lock()
+		tdl.fdl.data.apikeys[key.ID] = &key
+		tdl.fdl.data.Unlock()
+		return nil
+	}
+	q := `INSERT INTO api_keys (` + key.InsertColumns() + `) VALUES (` + key.InsertParams() + `);`
+	if _, err := tdl.pgdb.Exec(q, key.InsertValues()...); err != nil {
+		return errors.Wrap(err, "error inserting api keys")
+	}
+	return nil
+}
+
 func (tdl *TestDataLayer) insert(qa *models.QAEnvironment) error {
 	if dltype == "fake" {
 		return tdl.insertFake(qa)
@@ -235,6 +249,21 @@ func readTestEventLogData(path string) ([]models.EventLog, error) {
 	err = d.Decode(&data)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling test event log data: %v", err)
+	}
+	return data, nil
+}
+
+func readTestAPIKeysData(path string) ([]models.APIKey, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening test api key file: %v", err)
+	}
+	defer f.Close()
+	data := []models.APIKey{}
+	d := json.NewDecoder(f)
+	err = d.Decode(&data)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling test api key data: %v", err)
 	}
 	return data, nil
 }
@@ -296,6 +325,15 @@ func (tdl *TestDataLayer) Setup(path string) error {
 	for _, el := range elogs {
 		if err := tdl.insertEventLog(el); err != nil {
 			return errors.Wrap(err, "error inserting event log")
+		}
+	}
+	apikeys, err := readTestAPIKeysData("testdata/api_keys.json")
+	if err != nil {
+		return errors.Wrap(err, "error reading api key data")
+	}
+	for _, key := range apikeys {
+		if err := tdl.insertAPIKeys(key); err != nil {
+			return errors.Wrap(err, "error inserting api key")
 		}
 	}
 	return nil
