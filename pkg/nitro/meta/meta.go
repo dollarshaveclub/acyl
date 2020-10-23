@@ -568,7 +568,6 @@ func (g DataGetter) FetchCharts(ctx context.Context, rc *models.RepoConfig, base
 			vsl := strings.SplitN(v, "=", 2)
 			if len(vsl) != 2 {
 				return nil, fmt.Errorf("malformed value override '%v': %w", v, ErrMalformedValueOverride)
-
 			}
 			loc.ValueOverrides[vsl[0]] = vsl[1]
 		}

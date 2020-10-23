@@ -183,7 +183,6 @@ func (m *Manager) setGithubCommitStatus(ctx context.Context, rd *models.RepoRevi
 		LinkTargetURL: renderedCSTemplate.TargetURL,
 	}); err != nil {
 		return nil, fmt.Errorf("error setting event status rendered status: %w", err)
-
 	}
 	turl := renderedCSTemplate.TargetURL
 	if m.UIBaseURL != "" {
@@ -365,16 +364,13 @@ func (m *Manager) generateNewEnv(ctx context.Context, rd *models.RepoRevisionDat
 		// update relevant fields
 		if err := m.DL.SetQAEnvironmentStatus(tracer.ContextWithSpan(context.Background(), span), env.Name, models.Spawned); err != nil {
 			return nil, fmt.Errorf("error setting environment status: %w", err)
-
 		}
 		m.DL.AddEvent(ctx, env.Name, fmt.Sprintf("reusing environment record for webhook event %v", eventlogger.GetLogger(ctx).ID.String()))
 		if err := m.DL.SetQAEnvironmentRepoData(ctx, env.Name, rd); err != nil {
 			return nil, fmt.Errorf("error setting environment repo data: %w", err)
-
 		}
 		if err := m.DL.SetQAEnvironmentCreated(ctx, env.Name, time.Now().UTC()); err != nil {
 			return nil, fmt.Errorf("error setting environment created timestamp: %w", err)
-
 		}
 		env, err = m.DL.GetQAEnvironment(ctx, env.Name)
 		if err != nil {
@@ -402,7 +398,6 @@ func (m *Manager) generateNewEnv(ctx context.Context, rd *models.RepoRevisionDat
 		}
 		if err = m.DL.CreateQAEnvironment(ctx, env); err != nil {
 			return nil, fmt.Errorf("error writing environment to db: %w", err)
-
 		}
 	}
 	return env, nil
@@ -433,15 +428,12 @@ func (m *Manager) processEnvConfig(ctx context.Context, env *models.QAEnvironmen
 	}
 	if err := m.DL.SetQAEnvironmentRefMap(ctx, env.Name, rm); err != nil {
 		return ne, fmt.Errorf("error setting environment ref map: %w", err)
-
 	}
 	if err := m.DL.SetQAEnvironmentCommitSHAMap(ctx, env.Name, csm); err != nil {
 		return ne, fmt.Errorf("error setting environment commit sha map: %w", err)
-
 	}
 	if err := m.DL.SetQAEnvironmentRepoData(ctx, env.Name, rd); err != nil {
 		return ne, fmt.Errorf("error setting environment repo data: %w", err)
-
 	}
 	env, err = m.DL.GetQAEnvironment(ctx, env.Name)
 	if err != nil {
@@ -555,7 +547,6 @@ func (m *Manager) create(ctx context.Context, rd *models.RepoRevisionData) (envn
 
 	if err = m.enforceGlobalLimit(ctx); err != nil {
 		return "", fmt.Errorf("error enforcing global limit: %w", err)
-
 	}
 
 	chartSpan, ctx := tracer.StartSpanFromContext(ctx, "build_and_install_charts")
@@ -801,7 +792,6 @@ func (m *Manager) update(ctx context.Context, rd *models.RepoRevisionData) (envn
 		envinfo.Releases = rsls
 		if err := m.CI.BuildAndUpgradeCharts(ctx, envinfo, k8senv, mcloc); err != nil {
 			return envinfo.Env.Name, fmt.Errorf("error upgrading charts: %w", nitroerrors.UserError(err))
-
 		}
 		return envinfo.Env.Name, nil
 	}
